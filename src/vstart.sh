@@ -91,6 +91,7 @@ start_rgw=0
 ip=""
 nodaemon=0
 smallmds=0
+short=0
 ec=0
 hitset=""
 overwrite_conf=1
@@ -131,6 +132,7 @@ usage=$usage"\t--rgw_port specify ceph rgw http listen port\n"
 usage=$usage"\t--bluestore use bluestore as the osd objectstore backend\n"
 usage=$usage"\t--memstore use memstore as the osd objectstore backend\n"
 usage=$usage"\t--cache <pool>: enable cache tiering on pool\n"
+usage=$usage"\t--short: short object names only; necessary for ext4 dev\n"
 
 usage_exit() {
 	printf "$usage"
@@ -161,6 +163,9 @@ case $1 in
 	    ;;
     --new | -n )
 	    new=1
+	    ;;
+    --short )
+	    short=1
 	    ;;
     --valgrind )
 	    [ -z "$2" ] && usage_exit
@@ -465,6 +470,10 @@ cat <<EOF >> $conf_fn
 	auth client required = none
 EOF
 fi
+if [ "$short" -eq 1 ]; then
+    COSDSHORT="        osd max object name len = 460
+        osd max object namespace len = 64"
+fi
 			cat <<EOF >> $conf_fn
 
 [client]
@@ -517,6 +526,7 @@ $CMONDEBUG
 $extra_conf
         mon cluster log file = $CEPH_OUT_DIR/cluster.mon.\$id.log
 [global]
+$COSDSHORT
 $extra_conf
 EOF
 		fi
