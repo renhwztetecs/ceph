@@ -631,7 +631,8 @@ void OSDService::promote_throttle_recalibrate()
     unsigned po = (double)target_obj_sec * dur * 1000.0 / (double)attempts;
     unsigned pb = (double)target_bytes_sec / (double)avg_size * dur * 1000.0
       / (double)attempts;
-    derr << __func__ << "  po " << po << " pb " << pb << " avg_size " << avg_size << dendl;
+    dout(20) << __func__ << "  po " << po << " pb " << pb << " avg_size "
+	     << avg_size << dendl;
     if (target_obj_sec && target_bytes_sec)
       new_prob = MIN(po, pb);
     else if (target_obj_sec)
@@ -2021,6 +2022,31 @@ int OSD::init()
 
   int rotating_auth_attempts = 0;
   const int max_rotating_auth_attempts = 10;
+
+  // sanity check long object name handling
+  {
+    hobject_t l;
+    l.oid.name = string(g_conf->osd_max_object_name_len, 'n');
+    l.set_key(string(g_conf->osd_max_object_name_len, 'k'));
+    l.nspace = string(g_conf->osd_max_object_namespace_len, 's');
+    r = store->validate_hobject_key(l);
+    if (r < 0) {
+      derr << "backend (" << store->get_type() << ") is unable to support max "
+	   << "object name[space] len" << dendl;
+      derr << "   osd max object name len = "
+	   << g_conf->osd_max_object_name_len << dendl;
+      derr << "   osd max object namespace len = "
+	   << g_conf->osd_max_object_namespace_len << dendl;
+      derr << cpp_strerror(r) << dendl;
+      if (g_conf->osd_check_max_object_name_len_on_startup) {
+	goto out;
+      }
+      derr << "osd_check_max_object_name_len_on_startup = false, starting anyway"
+	   << dendl;
+    } else {
+      dout(20) << "configured osd_max_object_name[space]_len looks ok" << dendl;
+    }
+  }
 
   // read superblock
   r = read_superblock();
@@ -4662,7 +4688,7 @@ bool OSD::ms_handle_reset(Connection *con)
   dout(1) << "ms_handle_reset con " << con << " session " << session << dendl;
   if (!session)
     return false;
-  session->wstate.reset();
+  session->wstate.reset(con);
   session->con.reset(NULL);  // break con <-> session ref cycle
   session_handle_reset(session);
   session->put();
