@@ -8816,8 +8816,6 @@ int Client::_write(Fh *f, int64_t offset, uint64_t size, const char *buf,
     }
   }
 
-  utime_t lat;
-  uint64_t totalwritten;
   int have;
   int r = get_caps(in, CEPH_CAP_FILE_WR|CEPH_CAP_AUTH_SHARED,
 		    CEPH_CAP_FILE_BUFFER, &have, endoff);
@@ -8932,11 +8930,11 @@ int Client::_write(Fh *f, int64_t offset, uint64_t size, const char *buf,
   // if we get here, write was successful, update client metadata
 success:
   // time
-  lat = ceph_clock_now();
+  utime_t lat = ceph_clock_now();
   lat -= start;
   logger->tinc(l_c_wrlat, lat);
 
-  totalwritten = size;
+  uint64_t totalwritten = size;
   r = (int)totalwritten;
 
   // extend file?
