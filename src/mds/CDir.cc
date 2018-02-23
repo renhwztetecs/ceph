@@ -335,7 +335,6 @@ CDentry* CDir::add_null_dentry(std::string_view dname,
   
   // add to dir
   assert(items.count(dn->key()) == 0);
-  //assert(null_items.count(dn->get_name()) == 0);
 
   items[dn->key()] = dn;
   if (last == CEPH_NOSNAP)
@@ -381,7 +380,6 @@ CDentry* CDir::add_primary_dentry(std::string_view dname, CInode *in,
   
   // add to dir
   assert(items.count(dn->key()) == 0);
-  //assert(null_items.count(dn->get_name()) == 0);
 
   items[dn->key()] = dn;
 
@@ -426,7 +424,6 @@ CDentry* CDir::add_remote_dentry(std::string_view dname, inodeno_t ino, unsigned
   
   // add to dir
   assert(items.count(dn->key()) == 0);
-  //assert(null_items.count(dn->get_name()) == 0);
 
   items[dn->key()] = dn;
   if (last == CEPH_NOSNAP)
